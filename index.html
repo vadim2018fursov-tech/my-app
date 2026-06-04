@@ -1,0 +1,761 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comfy Сервіс Керівник — Панель Магазину</title>
+    <style>
+        :root {
+            --comfy-main-bg: #f3f4f6;       
+            --comfy-card-bg: #ffffff;       
+            --comfy-dark: #1f2226;          
+            --comfy-green: #45c735;         
+            --comfy-green-hover: #3cb02e;   
+            --comfy-orange: #ff6c00;        
+            --comfy-text: #1f2226;          
+            --comfy-muted: #7f8c99;         
+            --comfy-border: #e2e8f0;        
+            --comfy-danger: #ff3b30;        
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { display: flex; background-color: var(--comfy-main-bg); color: var(--comfy-text); min-height: 100vh; }
+
+        .menu-toggle {
+            display: none; position: fixed; top: 15px; left: 15px; z-index: 100;
+            background: var(--comfy-dark); color: white; border: none; padding: 12px 18px;
+            font-size: 20px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* БІЧНЕ МЕНЮ */
+        .sidebar {
+            width: 75px; background-color: var(--comfy-dark); color: white; height: 100vh;
+            position: fixed; top: 0; left: 0; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow-x: hidden;
+            z-index: 99; display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+        }
+        .sidebar:hover { width: 290px; }
+        
+        .sidebar-brand { 
+            padding: 25px 20px; font-size: 24px; font-weight: 900; white-space: nowrap; 
+            border-bottom: 1px solid #2d3238; text-align: center; color: #fff; letter-spacing: -0.5px;
+        }
+        .sidebar-brand span { background: var(--comfy-green); color: var(--comfy-dark); padding: 2px 8px; border-radius: 6px; font-weight: 900; margin-left: 4px; }
+        .sidebar:hover .sidebar-brand { text-align: left; padding-left: 25px; }
+        
+        .sidebar-menu { list-style: none; margin-top: 20px; flex-grow: 1; }
+        .sidebar-menu li { 
+            padding: 16px 25px; cursor: pointer; white-space: nowrap; display: flex; 
+            align-items: center; transition: all 0.2s ease; color: #a0aec0; font-weight: 600;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-menu li:hover { background-color: #2d3238; color: #fff; }
+        .sidebar-menu li.active-menu-item { background-color: #25292f; color: #fff; border-left-color: var(--comfy-green); font-weight: 700; }
+        .sidebar-menu li .icon { margin-right: 20px; font-size: 20px; min-width: 24px; text-align: center; }
+        
+        .admin-lock-btn { 
+            background: #15171a; padding: 22px 25px; cursor: pointer; display: flex; 
+            align-items: center; border-top: 1px solid #2d3238; color: #7f8c99; transition: all 0.2s;
+        }
+        .admin-lock-btn:hover { color: #fff; background: #1a1d22; }
+
+        /* ОСНОВНИЙ КОНТЕНТ */
+        .main-content { flex: 1; margin-left: 75px; padding: 45px; transition: margin-left 0.3s ease; }
+        .sidebar:hover ~ .main-content { margin-left: 290px; }
+        
+        .section { 
+            display: none; background: var(--comfy-card-bg); padding: 40px; border-radius: 24px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 30px; border: 1px solid var(--comfy-border);
+        }
+        .section.active { display: block; }
+
+        h2 { margin-bottom: 30px; color: var(--comfy-dark); font-size: 28px; font-weight: 800; letter-spacing: -0.7px; }
+        h3 { margin: 35px 0 20px 0; color: var(--comfy-dark); font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.3px; }
+
+        /* ЛІДЕРИ */
+        .leaders-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .leader-card { 
+            background: #f8fafc; border: 1px solid var(--comfy-border); border-radius: 20px; 
+            padding: 30px 20px; text-align: center; transition: all 0.2s;
+        }
+        .leader-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.04); }
+        .leader-avatar-container { width: 110px; height: 110px; margin: 0 auto 18px auto; border-radius: 50%; border: 6px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .leader-card:nth-child(1) .leader-avatar-container { border-color: #ffca28; box-shadow: 0 0 25px rgba(255, 202, 40, 0.35); }
+        .leader-avatar { width: 100%; height: 100%; object-fit: cover; }
+        .leader-card .name { font-size: 18px; font-weight: 800; color: var(--comfy-dark); }
+        .leader-card .category-title { font-size: 11px; color: var(--comfy-muted); text-transform: uppercase; font-weight: 700; margin-top: 8px; letter-spacing: 0.6px; }
+
+        /* AI БЛОК ПІДКАЗОК */
+        .ai-alerts-box { background: #fffde7; border: 1px solid #fff59d; padding: 20px; border-radius: 16px; margin-bottom: 35px; }
+        .ai-alert-item { font-size: 14px; font-weight: 600; color: #5d4037; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+        /* КАТАЛОГ СЕРВІСІВ */
+        .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .service-card { background: #ffffff; border: 2px solid var(--comfy-border); border-radius: 20px; padding: 25px; transition: all 0.2s; }
+        .service-card h4 { color: var(--comfy-dark); margin-bottom: 12px; font-size: 18px; font-weight: 800; }
+        .service-card .desc-text { color: #4a5568; font-size: 14px; line-height: 1.6; white-space: pre-line; }
+
+        /* ТАБЛИЦІ */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; border-radius: 16px; overflow: hidden; border: 1px solid var(--comfy-border); }
+        th, td { padding: 16px 20px; text-align: left; font-size: 14px; color: var(--comfy-text); border-bottom: 1px solid var(--comfy-border); }
+        th { background-color: #f8fafc; color: var(--comfy-muted); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.7px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        input[type="text"], input[type="number"], select, textarea { 
+            width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; 
+            font-size: 14px; background: #ffffff; color: var(--comfy-dark); transition: all 0.2s; font-weight: 500;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus { outline: none; border-color: var(--comfy-green); box-shadow: 0 0 0 3px rgba(65,199,53,0.15); }
+        input:disabled, select:disabled, textarea:disabled { background: transparent !important; border: none !important; color: var(--comfy-dark) !important; font-weight: 700; padding: 0; appearance: none; box-shadow: none !important; }
+
+        /* Налаштування для вибору статусів працівниками, які мають залишатися активними завжди */
+        select.status-select-active { background: #fff !important; border: 1px solid #cbd5e1 !important; padding: 6px 10px !important; appearance: auto !important; }
+
+        /* КНОПКИ */
+        .btn { background-color: var(--comfy-dark); color: white; border: none; padding: 14px 28px; border-radius: 14px; cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:hover { transform: translateY(-1px); opacity: 0.95; }
+        .btn-success { background-color: var(--comfy-green); color: white; }
+        .btn-success:hover { background-color: var(--comfy-green-hover); box-shadow: 0 6px 16px rgba(69,199,53,0.25); }
+        .btn-danger { background-color: var(--comfy-danger); color: white; }
+        
+        .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; color: white; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px; }
+        .badge-pro { background-color: var(--comfy-orange); }
+        .badge-rookie { background-color: #3b82f6; }
+        
+        .file-input-label { display: inline-block; padding: 8px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; }
+        input[type="file"] { display: none; }
+
+        /* РЕЖИМ АДМІНІСТРАТОРА */
+        .admin-only { display: none !important; }
+        body.admin-mode .admin-only { display: block !important; }
+        body.admin-mode table .admin-only { display: table-row !important; }
+        body.admin-mode li.admin-only { display: flex !important; }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; margin-bottom: 10px; font-weight: 800; font-size: 14px; color: var(--comfy-dark); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .analytics-badge-box { display: flex; gap: 20px; margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid var(--comfy-border); }
+
+        /* СТИЛІ СТАТУСІВ ЗОН */
+        .status-select { font-weight: 700; border-radius: 8px; padding: 6px; }
+        .status-progress { background-color: #fff3e0; color: #e65100; border: 1px solid #ffb74d; }
+        .status-waiting { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #81c784; }
+        .status-verified { background-color: #e3f2fd; color: #1565c0; border: 1px solid #64b5f6; }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            .sidebar { width: 290px; left: -290px; }
+            .sidebar.open { left: 0; }
+            .main-content { margin-left: 0 !important; padding: 90px 20px 20px 20px; }
+            .leaders-row, .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+    <button class="menu-toggle" onclick="toggleMobileMenu()">☰ Меню</button>
+
+    <!-- САЙДБАР -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand">COMFY <span>PRO</span></div>
+        <ul class="sidebar-menu">
+            <li id="m-dashboard" class="active-menu-item" onclick="showSection('dashboard')"><span class="icon">🏆</span>Головна / Лідери</li>
+            <li id="m-format" onclick="showSection('format')"><span class="icon">🏢</span>Формат</li>
+            <li id="m-plans" onclick="showSection('plans')"><span class="icon">👤</span>Персональні плани</li>
+            <li id="m-our-services" onclick="showSection('our-services')"><span class="icon">💼</span>Наші сервіси</li>
+            <li id="m-auto-dist" class="admin-only" onclick="showSection('auto-dist')"><span class="icon">🤖</span>Розподіл плану</li>
+            <li id="m-share" onclick="showSection('share')"><span class="icon">📈</span>Рейтинг & Частки</li>
+            <li id="m-training" onclick="showSection('training')"><span class="icon">🎓</span>Навчання та контроль</li>
+            <li id="m-calendar" onclick="showSection('calendar')"><span class="icon">📅</span>Задачі & Зустрічі</li>
+            <li id="m-strategy" class="admin-only" onclick="showSection('strategy')"><span class="icon">🛡️</span>Стратегія</li>
+            <li id="m-action-now" onclick="showSection('action-now')"><span class="icon">⚡</span>Конструктор Дня</li>
+        </ul>
+        <div class="admin-lock-btn" onclick="toggleAdminMode()">
+            <span class="icon" id="lock-icon">🔒</span>
+            <span style="margin-left:15px; font-weight:800; font-size:13px; text-transform: uppercase;" id="lock-text">Панель Керівника</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <!-- ГОЛОВНА СТОРІНКА -->
+        <div id="dashboard" class="section active">
+            <h2>🏆 Панель управління сервісними показниками магазину</h2>
+            
+            <!-- ПІДКАЗКИ БАЧИТЬ ТІЛЬКИ АДМІНІСТРАТОР -->
+            <div class="ai-alerts-box admin-only">
+                <h4 style="margin-bottom:10px; color:#5d4037; font-weight:800;">🧠 Розумні AI-підказки Керівнику:</h4>
+                <div id="ai-alerts-container">
+                    <div class="ai-alert-item">💡 Розрахуйте плани або внесіть факти...</div>
+                </div>
+            </div>
+
+            <h3>🥇 Найкращі за минулий місяць</h3>
+            <div class="leaders-row">
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-m-gen" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-m-gen">-</div>
+                    <div class="category-title">Загальні сервіси</div>
+                </div>
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-m-happy" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-m-happy">-</div>
+                    <div class="category-title">Happy сервіс</div>
+                </div>
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-m-install" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-m-install">-</div>
+                    <div class="category-title">Встановлення</div>
+                </div>
+            </div>
+
+            <h3>⭐ Найкращі за минулий день</h3>
+            <div class="leaders-row">
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-d-gen" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-d-gen">-</div>
+                    <div class="category-title">Загальні сервіси</div>
+                </div>
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-d-happy" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-d-happy">-</div>
+                    <div class="category-title">Happy сервіс</div>
+                </div>
+                <div class="leader-card">
+                    <div class="leader-avatar-container"><img id="view-img-d-install" class="leader-avatar" src=""></div>
+                    <div class="name" id="view-name-d-install">-</div>
+                    <div class="category-title">Встановлення</div>
+                </div>
+            </div>
+
+            <div class="admin-only">
+                <hr style="margin:40px 0; border:none; border-top:1px dashed var(--comfy-border);">
+                <h3>⚙️ Редагування лідерів магазину</h3>
+                <table>
+                    <thead><tr><th>Категорія</th><th>ПІБ Лідера</th><th>Фото</th></tr></thead>
+                    <tbody>
+                        <tr><td>Місяць: Загальні</td><td><input type="text" id="inp-name-m-gen"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'mGen')"></label></td></tr>
+                        <tr><td>Місяць: Happy</td><td><input type="text" id="inp-name-m-happy"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'mHappy')"></label></td></tr>
+                        <tr><td>Місяць: Встановл.</td><td><input type="text" id="inp-name-m-install"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'mInstall')"></label></td></tr>
+                        <tr><td>День: Загальні</td><td><input type="text" id="inp-name-d-gen"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'dGen')"></label></td></tr>
+                        <tr><td>День: Happy</td><td><input type="text" id="inp-name-d-happy"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'dHappy')"></label></td></tr>
+                        <tr><td>День: Встановл.</td><td><input type="text" id="inp-name-d-install"></td><td><label class="file-input-label">Обрати photo<input type="file" onchange="uploadLeaderPhoto(this, 'dInstall')"></label></td></tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-success" onclick="saveLeadersData()">💾 Зберегти лідерів</button>
+            </div>
+        </div>
+
+        <!-- КАТЕГОРІЯ ФОРМАТ -->
+        <div id="format" class="section">
+            <h2>🏢 Формат: Операційне управління зонами та завданнями</h2>
+            <p style="color:var(--comfy-muted); margin-bottom:25px; font-weight:500;">Управління чек-лістами викладки, прибирання та цінників. Завдання генеруються по днях тижня або редагуються адміном вручну.</p>
+            
+            <table id="format-main-table">
+                <thead>
+                    <tr>
+                        <th>Товарная Зона</th>
+                        <th>Відповідальний</th>
+                        <th>Задача на сьогодні (Редагується в адмін-режимі)</th>
+                        <th style="width:240px;">Статус виконання (Активно завжди)</th>
+                        <th class="admin-only" style="width:80px;">Дія</th>
+                    </tr>
+                </thead>
+                <tbody id="zones-table-body">
+                    <!-- Генерується динамічно -->
+                </tbody>
+            </table>
+            
+            <div style="display:flex; gap:15px; margin-bottom:40px;">
+                <button class="btn btn-success" onclick="saveZonesState()">💾 Зберегти поточний стан Формату</button>
+                <button class="btn admin-only" onclick="addNewZoneRow()" style="background:#3b82f6; color:white;">➕ Додати нову зону</button>
+            </div>
+
+            <!-- РЕДАКТОР МАТРИЦІ ЗАВДАНЬ ЗА ДНЯМИ ТИЖНЯ (АДМІН) -->
+            <div class="admin-only" style="background:#f8fafc; padding:30px; border-radius:20px; border:1px dashed var(--comfy-border);">
+                <h3>⚙️ Редактор базових операційних завдань по днях тижня</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Понеділок:</label><input type="text" id="dt-1"></div>
+                    <div class="form-group"><label>Вівторок:</label><input type="text" id="dt-2"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Середа:</label><input type="text" id="dt-3"></div>
+                    <div class="form-group"><label>Четвер:</label><input type="text" id="dt-4"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label>П'ятниця:</label><input type="text" id="dt-5"></div>
+                    <div class="form-group"><label>Субота:</label><input type="text" id="dt-6"></div>
+                </div>
+                <div class="form-group"><label>Неділя:</label><input type="text" id="dt-0"></div>
+                <button class="btn" onclick="saveDayTasksMatrix()" style="background:var(--comfy-dark);">💾 Зберегти матрицю днів</button>
+            </div>
+        </div>
+
+        <!-- НАШІ СЕРВІСИ -->
+        <div id="our-services" class="section">
+            <h2>💼 Каталог та опис внутрішніх сервісів Comfy</h2>
+            <div class="service-grid" id="services-container"></div>
+            <br>
+            <button class="btn btn-success admin-only" onclick="saveServicesData()">💾 Зберегти зміни сервісів</button>
+        </div>
+
+        <!-- ПЕРСОНАЛЬНІ ПЛАНИ -->
+        <div id="plans" class="section">
+            <h2>👤 Персональні плани та налаштування штату</h2>
+            <table>
+                <thead><tr><th>Ім'я</th><th>Статус</th><th>Вага</th><th>Факт (грн)</th><th>Поточний План (грн)</th><th class="admin-only">Дія</th></tr></thead>
+                <tbody id="staff-editor-table"></tbody>
+            </table>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn btn-success admin-only" onclick="saveStaffEditor()">💾 Зберегти зміни працівників</button>
+                <button class="btn admin-only" onclick="addNewSeller()" style="background:#3b82f6; color:white;">➕ Додати працівника</button>
+            </div>
+        </div>
+
+        <!-- РОЗПОДІЛ ПЛАНУ -->
+        <div id="auto-dist" class="section">
+            <h2>🤖 Автоматичний розподіл загального плану</h2>
+            <div class="form-group" style="max-width: 450px;">
+                <label for="total-target">Загальний сервісний план магазина (грн):</label>
+                <input type="number" id="total-target" value="150000">
+            </div>
+            <button class="btn btn-success" onclick="runAutoDistribution()">⚡ Розподілити на команду</button>
+        </div>
+
+        <!-- РЕЙТИНГ ТА ЧАСТКИ -->
+        <div id="share" class="section">
+            <h2>📈 Рейтинг продавців за % виконання плану та фінансові частки</h2>
+            <table>
+                <thead><tr><th>Місце</th><th>Працівник</th><th>Посада</th><th>План (грн)</th><th>Факт (грн)</th><th>% Виконання</th><th>Частка від всього магазину (%)</th></tr></thead>
+                <tbody id="share-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- НАВЧАННЯ -->
+        <div id="training" class="section">
+            <h2>🎓 Навчання та контроль знань</h2>
+            <table>
+                <thead><tr><th>Працівник</th><th>Поточна тема навчання</th><th>Статус / Оцінка знань</th></tr></thead>
+                <tbody id="training-table-body"></tbody>
+            </table>
+            <button class="btn btn-success admin-only" onclick="saveTrainingData()">💾 Зберегти дані навчання</button>
+        </div>
+
+        <!-- КАЛЕНДАР ТА ЗУСТРІЧІ -->
+        <div id="calendar" class="section">
+            <h2>📅 Operational Calendar: Задачі та Зустрічі</h2>
+            <h3>📝 Загальномагазинні сервісні задачі</h3>
+            <table>
+                <thead><tr><th>Термін</th><th>Зміст завдання</th><th>Відповідальний</th><th class="admin-only">Дія</th></tr></thead>
+                <tbody id="calendar-table-body"></tbody>
+            </table>
+            <button class="btn admin-only" onclick="addNewTaskRow()" style="background:#e2e8f0; color:var(--comfy-dark)">➕ Додати задачу</button>
+
+            <h3 style="margin-top:45px;">🗓️ Особисті зустрічі з продавцями (One-to-One)</h3>
+            <table>
+                <thead><tr><th>Дата / Час</th><th>Працівник</th><th>Ціль зустрічі / Результат</th><th class="admin-only">Дія</th></tr></thead>
+                <tbody id="meetings-table-body"></tbody>
+            </table>
+            <button class="btn admin-only" onclick="addNewMeetingRow()" style="background:#e2e8f0; color:var(--comfy-dark)">➕ Додати зустріч</button>
+            <br><br>
+            <button class="btn btn-success admin-only" onclick="saveCalendarAndMeetings()">💾 Зберегти календар та зустрічі</button>
+        </div>
+
+        <!-- СТРАТЕГІЯ -->
+        <div id="strategy" class="section">
+            <h2>🛡️ Захист сервісної стратегії на місяць</h2>
+            <button class="btn btn-success" onclick="exportReportToClipboard()" style="background:var(--comfy-orange); margin-bottom: 25px;">📋 Скопіювати звіт для Керівництва</button>
+
+            <div style="background: #ffffff; padding: 30px; border-radius: 20px; border: 2px solid var(--comfy-border); margin: 20px 0;">
+                <h3>📊 Порівняльний аналіз продажів: 2025 vs 2026</h3>
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 35px; align-items: start;">
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+                            <thead><tr style="background:#f8fafc;"><th style="padding:10px;">Місяць</th><th style="padding:10px; color:#3b82f6;">2025 (₴)</th><th style="padding:10px; color:var(--comfy-green);">2026 (₴)</th></tr></thead>
+                            <tbody id="chart-data-inputs"></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="analytics-badge-box">
+                            <div style="flex:1;"><span>Всього 2025:</span><div id="total-2025-view" style="font-size:20px; font-weight:900; color:#3b82f6;">0 ₴</div></div>
+                            <div style="flex:1;"><span>Всього 2026:</span><div id="total-2026-view" style="font-size:20px; font-weight:900; color:var(--comfy-green);">0 ₴</div></div>
+                            <div style="flex:1; border-left:2px dashed var(--comfy-border); padding-left:20px;"><span>Динаміка YoY:</span><div id="yoy-percentage-view" style="font-size:20px; font-weight:900;">0%</div></div>
+                        </div>
+                        <div style="position: relative; width:100%; height:300px;"><canvas id="salesYearlyChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group"><label>Результат твого магазину минулого місяця (грн):</label><input type="number" id="strat-input-shop" value="136000"></div>
+                <div class="form-group"><label>Середній результат Регіону (грн):</label><input type="number" id="strat-input-region" value="140000"></div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group"><label>Результат магазину 2 місяці тому (грн):</label><input type="number" id="strat-shop-history-2" value="125000"></div>
+                <div class="form-group"><label>Результат магазину 3 місяці тому (грн):</label><input type="number" id="strat-shop-history-3" value="118000"></div>
+            </div>
+
+            <h3>👥 Історія продажів кожного продавця</h3>
+            <table>
+                <thead><tr><th>Ім'я</th><th>2 місяці тому (грн)</th><th>3 місяці тому (грн)</th></tr></thead>
+                <tbody id="strat-staff-history-table"></tbody>
+            </table>
+            
+            <button class="btn btn-success admin-only" onclick="generateAutoStrategy()">🧠 Розрахувати рішення на основі трендів</button>
+            <br><br>
+            <div class="form-group"><label>🎯 Стратегія по магазину:</label><textarea id="strat-goals" rows="3"></textarea></div>
+            <div class="form-group"><label>👥 Персональні рішення по кожному продавцю:</label><textarea id="strat-low-performers" rows="4"></textarea></div>
+            <div class="form-group"><label>🛠️ Аналіз попередніх успішних дій:</label><textarea id="strat-done" rows="3"></textarea></div>
+            <button class="btn btn-success admin-only" onclick="saveStrategy()">💾 Зберегти фінальну стратегію</button>
+        </div>
+
+        <!-- КОНСТРУКТОР ПЛАНІВ НА ДЕНЬ -->
+        <div id="action-now" class="section">
+            <h2>⚡ Розумний конструктор денного плану</h2>
+            <p style="color:var(--comfy-muted); margin-bottom:25px; font-weight:500;">Виберіть, хто сьогодні на зміні, вкажіть загальний план на день — система миттєво розподілить завдання.</p>
+            
+            <div class="grid-2" style="margin-bottom: 25px;">
+                <div class="form-group">
+                    <label>Цільовий сервісний фокус дня:</label>
+                    <input type="text" id="tom-focus-input" value="Максимальний фокус на склі/плівках до смартфонів">
+                </div>
+                <div class="form-group">
+                    <label>Загальний сервісний план на сьогодні (грн):</label>
+                    <input type="number" id="daily-target-input" value="8000" oninput="recalculateDailyPlan()">
+                </div>
+            </div>
+
+            <h3>👥 Хто сьогодні на зміні? (Доступно завжди)</h3>
+            <div id="daily-attendance-container" style="display:flex; gap:20px; margin-bottom:30px; flex-wrap:wrap;"></div>
+
+            <h3>📋 Розподілені персональні цілі на день:</h3>
+            <table style="margin-bottom:20px;">
+                <thead><tr><th>Співробітник</th><th>Посада / Вага</th><th>Індивідуальний план на зміну</th></tr></thead>
+                <tbody id="daily-calculated-tbody"></tbody>
+            </table>
+
+            <div class="form-group" style="margin-top:30px;">
+                <label>📝 Додаткові операційні нотатки на день:</label>
+                <textarea id="tom-tasks-input" rows="4"></textarea>
+            </div>
+            <button class="btn btn-success admin-only" onclick="saveTomorrowPlan()">💾 Зберегти план дня</button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const adminPassword = "1111";
+        let isAdmin = false;
+
+        const defaultStaff = [
+            { id: 'e1', name: 'Олександр', status: 'pro', weight: 1.5, pastSales: 45000, currentPlan: 30000, manualShare: 20, topic: 'Стандарти Happy сервісу', score: 'Пройшов', history2: 41000, history3: 39000 },
+            { id: 'e2', name: 'Дмитро', status: 'pro', weight: 1.3, pastSales: 38000, currentPlan: 25000, manualShare: 18, topic: 'Встановлення техніки', score: 'На перездачі', history2: 39500, history3: 41000 },
+            { id: 'e3', name: 'Тетяна', status: 'pro', weight: 1.2, pastSales: 35000, currentPlan: 22000, manualShare: 15, topic: 'Загальний сервісний скрипт', score: 'Пройшов', history2: 33000, history3: 31000 },
+            { id: 'e4', name: 'Андрій', status: 'rookie', weight: 0.8, pastSales: 12000, currentPlan: 18000, manualShare: 12, topic: 'Робота з запереченнями', score: 'Не вивчав', history2: 12000, history3: 5000 }
+        ];
+
+        const currentDayIndex = new Date().getDay(); 
+        const defaultDayTasks = {
+            1: "Понеділок: Повний аудит та заміна ЦІННИКІВ у зоні відповідно до нових промо.",
+            2: "Вівторок: Перевірка ПРАВИЛЬНОСТІ ВИКЛАДКИ, оновлення демо-зон.",
+            3: "Середа: Глибоке ПРИБИРАННЯ зони, чистка техніки від пилу.",
+            4: "Четвер: Перевірка наявності інформаційних буклетів та ТТХ товарів.",
+            5: "П'ятниця: Контроль цінників перед вихідними днями (Суперціни).",
+            6: "Субота: Оперативний мерчандайзинг, гаряче поповнення полиць.",
+            0: "Неділя: Фінальний чек-ап цінників, підготовка звітів змін."
+        };
+        let dayTasks = JSON.parse(localStorage.getItem('v10_matrix')) || defaultDayTasks;
+        const todayTaskText = dayTasks[currentDayIndex] || "Спеціальне операційне завдання";
+
+        let defaultZones = [
+            { zone: '📱 Смартфони та Геймінг', responsible: 'e1', task: todayTaskText, status: 'В процесі' },
+            { zone: '💻 Ноутбуки та Аксесуари', responsible: 'e2', task: todayTaskText, status: 'В процесі' },
+            { zone: '📺 Зона ТБ (Телевізори)', responsible: 'e3', task: todayTaskText, status: 'Виконано' },
+            { zone: '🧺 Велика побутова (КБТ)', responsible: 'e4', task: todayTaskText, status: 'В процесі' },
+            { zone: '☕ Дрібна побутова (МБТ)', responsible: 'e1', task: todayTaskText, status: 'Перевірено' }
+        ];
+
+        let staff = JSON.parse(localStorage.getItem('v10_staff')) || defaultStaff;
+        let zones = JSON.parse(localStorage.getItem('v10_zones')) || defaultZones;
+        let leaders = JSON.parse(localStorage.getItem('v10_leaders')) || { mGen: 'Сергій К.', mHappy: 'Анна М.', mInstall: 'Олег Д.', dGen: 'Яна В.', dHappy: 'Ігор П.', dInstall: 'Дмитро Т.' };
+        let services = JSON.parse(localStorage.getItem('v10_services')) || [
+            { title: '📱 Сервіси до смартфонів', desc: '• Гідрогель, Налаштування акаунтів, Преміум Захист.' },
+            { title: '💻 Сервіси до ноутбуків та ПК', desc: '• Налаштування Windows, Office, Чистка та термопаста.' },
+            { title: '📺 Сервіси до телевізорів', desc: '• Перевірка на пікселі, Калібрування, Smart TV налаштування.' }
+        ];
+        let tasks = JSON.parse(localStorage.getItem('v10_tasks')) || [{ date: 'Щоденно', text: 'Контроль скриптів', ghost: 'Усі' }];
+        let meetings = JSON.parse(localStorage.getItem('v10_meetings')) || [{ date: 'Пт, 11:00', name: 'Андрій', цель: 'Розбір крос-продажів' }];
+        let activeDailySellers = staff.map(e => e.id); 
+
+        const monthsLabels = ['Січ', 'Лют', 'Бер', 'Квіт', 'Трав', 'Черв', 'Лип', 'Серп', 'Верес', 'Жовт', 'Лист', 'Груд'];
+        let data2025 = [110000, 115000, 120000, 118000, 125000, 130000, 128000, 135000, 132000, 138000, 145000, 175000];
+        let data2026 = [125000, 128000, 136000, 134000, 142000, 0, 0, 0, 0, 0, 0, 0];
+        let salesChart;
+
+        window.onload = function() {
+            initMatrixFields(); applyAdminUI(); renderLeaders(); renderServices(); 
+            renderStaffEditor(); renderShareTable(); renderTrainingTable(); 
+            renderCalendarTable(); renderMeetingsTable(); renderStrategyHistoryTable(); 
+            renderInputTable(); renderZonesTable(); renderDailyAttendance(); 
+            recalculateDailyPlan(); buildChart(); calculateTotals(); runAIEngine();
+        };
+
+        function initMatrixFields() {
+            for(let i=0; i<=6; i++) {
+                let el = document.getElementById(`dt-${i}`);
+                if(el) el.value = dayTasks[i] || '';
+            }
+        }
+
+        function saveDayTasksMatrix() {
+            for(let i=0; i<=6; i++) {
+                dayTasks[i] = document.getElementById(`dt-${i}`).value;
+            }
+            localStorage.setItem('v10_matrix', JSON.stringify(dayTasks));
+            
+            // Оновлюємо таски в активних рядках на дефолтні з матриці
+            const curDayIdx = new Date().getDay();
+            zones.forEach(z => {
+                z.task = dayTasks[curDayIdx] || "Операційне завдання";
+            });
+            localStorage.setItem('v10_zones', JSON.stringify(zones));
+            renderZonesTable();
+            alert('Матрицю операційних завдань дня успішно оновлено для всіх зон!');
+        }
+
+        function runAIEngine() {
+            const container = document.getElementById('ai-alerts-container');
+            if(!container) return;
+            container.innerHTML = '';
+            let alertHTML = '';
+            staff.forEach(e => {
+                let statusRatio = e.currentPlan > 0 ? (e.pastSales / e.currentPlan) * 100 : 0;
+                if (statusRatio < 75 && e.currentPlan > 0) {
+                    alertHTML += `<div class="ai-alert-item" style="color:var(--comfy-danger);">⚠️ <strong>Просадка:</strong> ${e.name} виконав план лише на ${Math.round(statusRatio)}%. Проведіть One-to-One з теми "${e.topic}".</div>`;
+                }
+            });
+            if(alertHTML === '') alertHTML = '<div class="ai-alert-item">✅ Критичних відхилень у торговій команді немає!</div>';
+            container.innerHTML = alertHTML;
+        }
+
+        // РЕНДЕР ЗОН ТА ЗАДАЧ ФОРМАТУ СЕРЕД КОРРИСТУВАЧІВ (ЗАДАЧА СТАЛА ІНПУТОМ)
+        function renderZonesTable() {
+            const tbody = document.getElementById('zones-table-body');
+            tbody.innerHTML = '';
+
+            zones.forEach((z, i) => {
+                let sellerOptions = staff.map(s => `<option value="${s.id}" ${z.responsible === s.id ? 'selected' : ''}>${s.name}</option>`).join('');
+                let selectClass = z.status === 'Виконано' ? 'status-waiting' : (z.status === 'Перевірено' ? 'status-verified' : 'status-progress');
+                let currentTaskValue = z.task || dayTasks[new Date().getDay()] || "";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="text" value="${z.zone}" id="zone-title-input-${i}" style="font-weight:700;"></td>
+                        <td><select id="zone-seller-${i}" onchange="updateZoneData(${i})">${sellerOptions}</select></td>
+                        <!-- ТЕПЕР ЗАДАЧА ТЕЖ КЕРУЄТЬСЯ ІНПУТОМ -->
+                        <td><input type="text" value="${currentTaskValue}" id="zone-task-input-${i}" style="font-weight:600; font-size:13px;"></td>
+                        <td>
+                            <select id="zone-status-${i}" class="status-select status-select-active ${selectClass}" onchange="changeZoneStatus(${i}, this)">
+                                <option value="В процесі" ${z.status==='В процесі'?'selected':''}>⏳ В процесі</option>
+                                <option value="Виконано" ${z.status==='Виконано'?'selected':''}>🚀 Виконано (Очікує перевірки)</option>
+                                <option value="Перевірено" ${z.status==='Перевірено'?'selected':''}>👑 Перевірено Керівником</option>
+                            </select>
+                        </td>
+                        <td class="admin-only">
+                            <button class="btn btn-danger" style="padding:6px 10px; margin:0;" onclick="deleteZoneRow(${i})">❌</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            applyAdminUI();
+        }
+
+        function addNewZoneRow() {
+            const curDayIdx = new Date().getDay();
+            zones.push({ zone: 'Нова товарна зона', responsible: staff[0] ? staff[0].id : '', task: dayTasks[curDayIdx]||"", status: 'В процесі' });
+            renderZonesTable();
+        }
+
+        function deleteZoneRow(i) {
+            if(confirm('Видалити цю товарну зону з формату?')) {
+                zones.splice(i, 1);
+                renderZonesTable();
+            }
+        }
+
+        function changeZoneStatus(idx, el) {
+            zones[idx].status = el.value;
+            localStorage.setItem('v10_zones', JSON.stringify(zones));
+            renderZonesTable();
+            runAIEngine();
+        }
+
+        function updateZoneData(idx) {
+            zones[idx].responsible = document.getElementById(`zone-seller-${idx}`).value;
+        }
+
+        function saveZonesState() {
+            zones.forEach((z, idx) => {
+                z.zone = document.getElementById(`zone-title-input-${idx}`).value;
+                z.responsible = document.getElementById(`zone-seller-${idx}`).value;
+                z.task = document.getElementById(`zone-task-input-${idx}`).value;
+                z.status = document.getElementById(`zone-status-${idx}`).value;
+            });
+            localStorage.setItem('v10_zones', JSON.stringify(zones));
+            alert('Дані Формату, зони та персональні завдання успішно збережено!');
+        }
+
+        function renderDailyAttendance() {
+            const container = document.getElementById('daily-attendance-container');
+            container.innerHTML = '';
+            staff.forEach(e => {
+                const isChecked = activeDailySellers.includes(e.id) ? 'checked' : '';
+                container.innerHTML += `
+                    <label style="background:#fff; border:1px solid var(--comfy-border); padding:10px 15px; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" ${isChecked} value="${e.id}" onchange="toggleDailySeller('${e.id}')"> ${e.name}
+                    </label>
+                `;
+            });
+        }
+
+        function toggleDailySeller(id) {
+            if (activeDailySellers.includes(id)) {
+                activeDailySellers = activeDailySellers.filter(x => x !== id);
+            } else {
+                activeDailySellers.push(id);
+            }
+            recalculateDailyPlan();
+        }
+
+        function recalculateDailyPlan() {
+            const dailyTarget = parseFloat(document.getElementById('daily-target-input').value) || 0;
+            const tbody = document.getElementById('daily-calculated-tbody');
+            tbody.innerHTML = '';
+            let filteredSellers = staff.filter(e => activeDailySellers.includes(e.id));
+            let totalWeight = filteredSellers.reduce((sum, e) => sum + e.weight, 0);
+            filteredSellers.forEach(e => {
+                let currentPersonShare = totalWeight > 0 ? (e.weight / totalWeight) * dailyTarget : 0;
+                tbody.innerHTML += `<tr><td><strong>${e.name}</strong></td><td><span class="badge ${e.status==='pro'?'badge-pro':'badge-rookie'}">${e.status.toUpperCase()}</span> (Вага ${e.weight})</td><td style="font-weight:900; color:var(--comfy-green);">${Math.round(currentPersonShare).toLocaleString()} ₴</td></tr>`;
+            });
+        }
+
+        function renderShareTable() {
+            const tbody = document.getElementById('share-table-body');
+            tbody.innerHTML = '';
+            let sortedStaff = [...staff].sort((a, b) => {
+                let ratioA = a.currentPlan > 0 ? (a.pastSales / a.currentPlan) : 0;
+                let ratioB = b.currentPlan > 0 ? (b.pastSales / b.currentPlan) : 0;
+                return ratioB - ratioA;
+            });
+            let totalStoreSales = staff.reduce((sum, e) => sum + e.pastSales, 0);
+            sortedStaff.forEach((e, i) => {
+                let ratio = e.currentPlan > 0 ? Math.round((e.pastSales / e.currentPlan) * 100) : 0;
+                let storeShare = totalStoreSales > 0 ? Math.round((e.pastSales / totalStoreSales) * 100) : 0;
+                tbody.innerHTML += `<tr><td><strong>#${i+1}</strong></td><td><strong>${e.name}</strong></td><td><span class="badge ${e.status==='pro'?'badge-pro':'badge-rookie'}">${e.status}</span></td><td>${e.currentPlan.toLocaleString()} ₴</td><td>${e.pastSales.toLocaleString()} ₴</td><td style="font-weight:bold; color:${ratio >= 100 ? 'var(--comfy-green)' : 'var(--comfy-danger)'}">${ratio}%</td><td><strong>${storeShare}%</strong></td></tr>`;
+            });
+        }
+
+        function exportReportToClipboard() {
+            let total2026 = data2026.reduce((a, b) => a + b, 0);
+            let textReport = `ЗВІТ ЩОДО СЕРВІСНОЇ СТРАТЕГІЇ МАГАЗИНУ\n`;
+            textReport += `----------------------------------------\n`;
+            textReport += `📈 Загальний результат сервісів 2026: ${total2026.toLocaleString()} ₴\n\n`;
+            textReport += `🎯 СТРАТЕГІЯ ПО МАГАЗИНУ:\n${document.getElementById('strat-goals').value}\n\n`;
+            textReport += `👥 ПЕРСОНАЛЬНІ РІШЕННЯ:\n${document.getElementById('strat-low-performers').value}\n`;
+            navigator.clipboard.writeText(textReport).then(() => {
+                alert('📋 Короткий звіт стратегії скопійовано для Керівництва!');
+            });
+        }
+
+        function applyAdminUI() {
+            const inputs = document.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (input.classList.contains('status-select-active') || input.closest('#daily-attendance-container')) {
+                    input.disabled = false;
+                } else {
+                    input.disabled = !isAdmin;
+                }
+            });
+        }
+
+        function toggleAdminMode() {
+            if (!isAdmin) { 
+                if (prompt("Введіть пароль доступу Керівника:") === adminPassword) { 
+                    isAdmin = true; 
+                    document.body.classList.add('admin-mode'); 
+                    document.getElementById('lock-icon').innerText = '🔓'; 
+                    document.getElementById('lock-text').innerText = 'Керівник: Доступ'; 
+                } 
+            } else { 
+                isAdmin = false; 
+                document.body.classList.remove('admin-mode'); 
+                document.getElementById('lock-icon').innerText = '🔒'; 
+                document.getElementById('lock-text').innerText = 'Панель Керівника'; 
+                showSection('dashboard'); 
+            }
+            applyAdminUI(); renderServices(); renderStaffEditor(); renderShareTable(); 
+            renderTrainingTable(); renderCalendarTable(); renderMeetingsTable(); 
+            renderStrategyHistoryTable(); renderZonesTable(); runAIEngine();
+        }
+
+        function renderInputTable() {
+            const tbody = document.getElementById('chart-data-inputs'); tbody.innerHTML = '';
+            monthsLabels.forEach((month, idx) => {
+                tbody.innerHTML += `<tr><td>${month}</td><td><input type="number" value="${data2025[idx]}" id="val-25-${idx}" oninput="updateChartFromInputs()"></td><td><input type="number" value="${data2026[idx]}" id="val-26-${idx}" oninput="updateChartFromInputs()"></td></tr>`;
+            });
+        }
+        function buildChart() {
+            const ctx = document.getElementById('salesYearlyChart').getContext('2d');
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: monthsLabels, datasets: [{ label: '2025 рік', data: data2025, borderColor: '#3b82f6', tension: 0.2, fill: false }, { label: '2026 рік', data: data2026, borderColor: '#45c735', borderWidth: 4, tension: 0.2, fill: false }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        function updateChartFromInputs() {
+            monthsLabels.forEach((_, idx) => { data2025[idx] = parseFloat(document.getElementById(`val-25-${idx}`).value) || 0; data2026[idx] = parseFloat(document.getElementById(`val-26-${idx}`).value) || 0; });
+            salesChart.data.datasets[0].data = data2025; salesChart.data.datasets[1].data = data2026; salesChart.update(); calculateTotals();
+        }
+        function calculateTotals() {
+            let total2025 = data2025.reduce((a, b) => a + b, 0); let displayTotal2026 = data2026.reduce((a, b) => a + b, 0);
+            document.getElementById('total-2025-view').innerText = total2025.toLocaleString() + ' ₴'; document.getElementById('total-2026-view').innerText = displayTotal2026.toLocaleString() + ' ₴';
+            let total2026Comp = 0, comp25 = 0; data2026.forEach((v, i) => { if (v > 0) { total2026Comp += v; comp25 += data2025[i]; } });
+            const yoyView = document.getElementById('yoy-percentage-view');
+            if (comp25 > 0) { let yoy = ((total2026Comp - comp25) / comp25) * 100; yoyView.innerText = `${yoy >= 0 ? '▲ +' : '▼ '}${yoy.toFixed(1)}%`; yoyView.style.color = yoy >= 0 ? 'var(--comfy-green)' : 'var(--comfy-danger)'; }
+        }
+        function renderServices() {
+            const container = document.getElementById('services-container'); container.innerHTML = '';
+            services.forEach((s, i) => { container.innerHTML += `<div class="service-card"><h4>${s.title}</h4><div class="admin-only"><input type="text" value="${s.title}" id="service-title-input-${i}"></div><div class="desc-text">${s.desc}</div><textarea id="service-desc-edit-${i}" class="admin-only" rows="3">${s.desc}</textarea></div>`; });
+            applyAdminUI();
+        }
+        function saveServicesData() { services.forEach((s, i) => { s.title = document.getElementById(`service-title-input-${i}`).value; s.desc = document.getElementById(`service-desc-edit-${i}`).value; }); localStorage.setItem('v10_services', JSON.stringify(services)); renderServices(); alert('Сервіси оновлено!'); }
+        function renderLeaders() { const keys = ['mGen', 'mHappy', 'mInstall', 'dGen', 'dHappy', 'dInstall']; keys.forEach(k => { document.getElementById(`view-name-${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`).innerText = leaders[k] || '-'; document.getElementById(`inp-name-${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`).value = leaders[k] || ''; }); }
+        function saveLeadersData() { const keys = ['mGen', 'mHappy', 'mInstall', 'dGen', 'dHappy', 'dInstall']; keys.forEach(k => { leaders[k] = document.getElementById(`inp-name-${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`).value; }); localStorage.setItem('v10_leaders', JSON.stringify(leaders)); renderLeaders(); alert('Лідери оновлені!'); }
+        function renderStaffEditor() {
+            const tbody = document.getElementById('staff-editor-table'); tbody.innerHTML = '';
+            staff.forEach((emp, i) => { tbody.innerHTML += `<tr><td><input type="text" value="${emp.name}" id="edit-emp-name-${i}"></td><td><span class="badge ${emp.status==='pro'?'badge-pro':'badge-rookie'}">${emp.status}</span><div class="admin-only"><select id="edit-emp-status-${i}"><option value="pro" ${emp.status==='pro'?'selected':''}>Pro</option><option value="rookie" ${emp.status==='rookie'?'selected':''}>Rookie</option></select></div></td><td><input type="number" step="0.1" value="${emp.weight}" id="edit-emp-weight-${i}"></td><td><input type="number" value="${emp.pastSales}" id="edit-emp-past-${i}"> ₴</td><td><input type="number" value="${emp.currentPlan}" id="edit-emp-plan-${i}"> ₴</td><td class="admin-only"><button class="btn btn-danger" style="padding:4px 8px; margin:0;" onclick="deleteSeller(${i})">❌</button></td></tr>`; });
+            applyAdminUI();
+        }
+        function addNewSeller() { const n = prompt("ПІБ співробітника:"); if (!n) return; staff.push({ id: 'e_' + Date.now(), name: n, status: 'rookie', weight: 1.0, pastSales: 0, currentPlan: 0, manualShare: 0, topic: 'Скрипти', score: 'Не вивчав' }); localStorage.setItem('v10_staff', JSON.stringify(staff)); activeDailySellers.push(staff[staff.length-1].id); renderStaffEditor(); renderShareTable(); renderDailyAttendance(); recalculateDailyPlan(); }
+        function deleteSeller(i) { if(confirm('Видалити?')) { staff.splice(i, 1); localStorage.setItem('v10_staff', JSON.stringify(staff)); renderStaffEditor(); renderShareTable(); } }
+        function saveStaffEditor() { staff.forEach((emp, i) => { emp.name = document.getElementById(`edit-emp-name-${i}`).value; if(isAdmin) emp.status = document.getElementById(`edit-emp-status-${i}`).value; emp.weight = parseFloat(document.getElementById(`edit-emp-weight-${i}`).value)||0; emp.pastSales = parseFloat(document.getElementById(`edit-emp-past-${i}`).value)||0; emp.currentPlan = parseFloat(document.getElementById(`edit-emp-plan-${i}`).value)||0; }); localStorage.setItem('v10_staff', JSON.stringify(staff)); renderStaffEditor(); renderShareTable(); runAIEngine(); alert('Збережено!'); }
+        function runAutoDistribution() { const t = parseFloat(document.getElementById('total-target').value)||0; let tw = staff.reduce((s,e)=>s+e.weight,0); staff.forEach(e=>{ e.currentPlan = Math.round(tw > 0 ? (e.weight / tw) * t : 0); }); localStorage.setItem('v10_staff', JSON.stringify(staff)); renderStaffEditor(); renderShareTable(); alert('Розподілено!'); }
+        function renderTrainingTable() { const tbody = document.getElementById('training-table-body'); tbody.innerHTML = ''; staff.forEach((e, i) => { tbody.innerHTML += `<tr><td><strong>${e.name}</strong></td><td><input type="text" value="${e.topic}" id="edit-train-topic-${i}"></td><td><select id="edit-train-score-${i}"><option value="Пройшов">Пройшов успішно</option><option value="В процесі">В процесі</option><option value="На перездачі">На перездачі</option><option value="Не вивчав">Не вивчав</option></select></td></tr>`; setTimeout(() => { document.getElementById(`edit-train-score-${i}`).value = e.score; }, 10); }); applyAdminUI(); }
+        function saveTrainingData() { staff.forEach((e, i) => { e.topic = document.getElementById(`edit-train-topic-${i}`).value; e.score = document.getElementById(`edit-train-score-${i}`).value; }); localStorage.setItem('v10_staff', JSON.stringify(staff)); alert('Навчання збережено!'); }
+        function renderCalendarTable() { const tbody = document.getElementById('calendar-table-body'); tbody.innerHTML = ''; tasks.forEach((t, i) => { tbody.innerHTML += `<tr><td><input type="text" value="${t.date}" id="task-date-${i}"></td><td><input type="text" value="${t.text}" id="task-text-${i}"></td><td><input type="text" value="${t.ghost}" id="task-ghost-${i}"></td><td class="admin-only"><button class="btn btn-danger" style="padding:4px;" onclick="tasks.splice(${i},1);renderCalendarTable()">❌</button></td></tr>`; }); applyAdminUI(); }
+        function addNewTaskRow() { tasks.push({ date: '1-1', text: 'Нова задача', ghost: 'Усі' }); renderCalendarTable(); }
+        function renderMeetingsTable() { const tbody = document.getElementById('meetings-table-body'); tbody.innerHTML = ''; meetings.forEach((m, i) => { tbody.innerHTML += `<tr><td><input type="text" value="${m.date}" id="meet-date-${i}"></td><td><input type="text" value="${m.name}" id="meet-name-${i}"></td><td><input type="text" value="${m.цель}" id="meet-goal-${i}"></td><td class="admin-only"><button class="btn btn-danger" style="padding:4px;" onclick="meetings.splice(${i},1);renderMeetingsTable()">❌</button></td></tr>`; }); applyAdminUI(); }
+        function addNewMeetingRow() { meetings.push({ date: '12:00', name: 'Хто', цель: 'Тема' }); renderMeetingsTable(); }
+        function saveCalendarAndMeetings() { localStorage.setItem('v10_tasks', JSON.stringify(tasks)); localStorage.setItem('v10_meetings', JSON.stringify(meetings)); alert('Календар збережено!'); }
+        function renderStrategyHistoryTable() { const tbody = document.getElementById('strat-staff-history-table'); tbody.innerHTML = ''; staff.forEach((e, i) => { tbody.innerHTML += `<tr><td><strong>${e.name}</strong></td><td><input type="number" value="${e.history2 || 0}" id="strat-hist2-${i}"></td><td><input type="number" value="${e.history3 || 0}" id="strat-hist3-${i}"></td></tr>`; }); applyAdminUI(); }
+        function generateAutoStrategy() { document.getElementById('strat-goals').value = "Аналіз завершено. Пріоритет: Підтягнути крос-сервіси в сегменті цифри."; alert('Розраховано!'); }
+        function saveStrategy() { localStorage.setItem('v10_strat_goals', document.getElementById('strat-goals').value); alert('Стратегію збережено!'); }
+        function saveTomorrowPlan() { localStorage.setItem('v10_tom_focus', document.getElementById('tom-focus-input').value); alert('План дня збережено!'); }
+        function showSection(id) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active-menu-item')); document.getElementById(id).classList.add('active'); document.getElementById('m-' + id).classList.add('active-menu-item'); document.getElementById('sidebar').classList.remove('open'); }
+        function toggleMobileMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+    </script>
+</body>
+</html>
